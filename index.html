@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpolation Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .array-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .result {
+            background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #ff6b6b, #ffa8a8);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .complexity-info {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: white;
+        }
+
+        .steps {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .step {
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .array-element {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 2px;
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .array-element.checked {
+            background: #ffecb3;
+            border-color: #ffc107;
+        }
+
+        .array-element.found {
+            background: #c8e6c9;
+            border-color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Interpolation Search</h1>
+        
+        <div class="form-group">
+            <label for="arraySize">Array Size:</label>
+            <input type="number" id="arraySize" min="1"  value="10">
+        </div>
+
+        <div class="form-group">
+            <label for="arrayElements">Array Elements (comma-separated, must be sorted):</label>
+            <input type="text" id="arrayElements" placeholder="e.g., 1,3,5,7,9,11,13,15,17,19">
+        </div>
+
+        <div class="form-group">
+            <label for="searchValue">Search Value:</label>
+            <input type="number" id="searchValue" placeholder="Enter value to search">
+        </div>
+
+        <button onclick="generateArray()">Generate Random Sorted Array</button>
+        <button onclick="performSearch()">Search</button>
+        <button onclick="clearResults()">Clear</button>
+
+        <div id="arrayDisplay"></div>
+        <div id="results"></div>
+        <canvas id="complexityChart" style="margin-top: 40px;"></canvas>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    </div>
+
+    <script>
+        let searchSteps = [];
+        let comparisons = 0;
+
+        function generateArray() {
+    const size = parseInt(document.getElementById('arraySize').value);
+    if (size < 1) {
+        alert('Array size must be at least 1');
+        return;
+    }
+
+    const arr = [];
+    let current = Math.floor(Math.random() * 10) + 1;
+    
+    for (let i = 0; i < size; i++) {
+        arr.push(current);
+        current += Math.floor(Math.random() * 5) + 1;
+    }
+
+    document.getElementById('arrayElements').value = arr.join(',');
+    displayArray(arr);
+}
+
+
+        function displayArray(arr, checkedIndices = [], foundIndex = -1) {
+            const display = document.getElementById('arrayDisplay');
+            let html = '<h3>Array:</h3><div>';
+            
+            arr.forEach((val, index) => {
+                let className = 'array-element';
+                if (checkedIndices.includes(index)) className += ' checked';
+                if (index === foundIndex) className += ' found';
+                
+                html += `<span class="${className}">[${index}]: ${val}</span>`;
+            });
+            
+            html += '</div>';
+            display.innerHTML = html;
+        }
+
+        function interpolationSearch(arr, target) {
+            searchSteps = [];
+            comparisons = 0;
+            let low = 0;
+            let high = arr.length - 1;
+            let checkedIndices = [];
+
+            while (low <= high && target >= arr[low] && target <= arr[high]) {
+                comparisons++;
+                
+                if (low === high) {
+                    checkedIndices.push(low);
+                    if (arr[low] === target) {
+                        searchSteps.push(`Step ${searchSteps.length + 1}: Found target ${target} at index ${low}`);
+                        return { index: low, steps: searchSteps, comparisons, checkedIndices };
+                    } else {
+                        searchSteps.push(`Step ${searchSteps.length + 1}: Element at index ${low} is ${arr[low]}, not equal to target ${target}`);
+                        return { index: -1, steps: searchSteps, comparisons, checkedIndices };
+                    }
+                }
+                let pos = low + Math.floor(((target - arr[low]) * (high - low)) / (arr[high] - arr[low]));
+                pos = Math.max(low, Math.min(high, pos));
+                
+                checkedIndices.push(pos);
+                
+                searchSteps.push(`Step ${searchSteps.length + 1}: Interpolation formula: pos = ${low} + ((${target} - ${arr[low]}) * (${high} - ${low})) / (${arr[high]} - ${arr[low]}) = ${pos}`);
+                searchSteps.push(`Step ${searchSteps.length + 1}: Checking index ${pos}, value = ${arr[pos]}`);
+
+                if (arr[pos] === target) {
+                    searchSteps.push(`Step ${searchSteps.length + 1}: Found target ${target} at index ${pos}`);
+                    return { index: pos, steps: searchSteps, comparisons, checkedIndices };
+                }
+
+                if (arr[pos] < target) {
+                    low = pos + 1;
+                    searchSteps.push(`Step ${searchSteps.length + 1}: ${arr[pos]} < ${target}, search in right half [${low}, ${high}]`);
+                } else {
+                    high = pos - 1;
+                    searchSteps.push(`Step ${searchSteps.length + 1}: ${arr[pos]} > ${target}, search in left half [${low}, ${high}]`);
+                }
+            }
+
+            searchSteps.push(`Step ${searchSteps.length + 1}: Target ${target} not found in array`);
+            return { index: -1, steps: searchSteps, comparisons, checkedIndices };
+        }
+
+        function performSearch() {
+            const arrayInput = document.getElementById('arrayElements').value.trim();
+            const searchValue = parseInt(document.getElementById('searchValue').value);
+            
+            if (!arrayInput) {
+                showError('Please enter array elements or generate a random array');
+                return;
+            }
+            
+            if (isNaN(searchValue)) {
+                showError('Please enter a valid search value');
+                return;
+            }
+
+            try {
+                const arr = arrayInput.split(',').map(x => parseInt(x.trim()));
+                for (let i = 1; i < arr.length; i++) {
+                    if (arr[i] < arr[i-1]) {
+                        showError('Array must be sorted for interpolation search to work correctly');
+                        return;
+                    }
+                }
+
+                const result = interpolationSearch(arr, searchValue);
+                displayArray(arr, result.checkedIndices, result.index);
+                showResult(result, arr.length);
+                
+            } catch (error) {
+                showError('Invalid array format. Please use comma-separated numbers');
+            }
+        }
+
+        function showResult(result, arraySize) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '';
+            
+            if (result.index !== -1) {
+                html += `<div class="result">
+                    <h3>✅ Search Result</h3>
+                    <p><strong>Target found at index:</strong> ${result.index}</p>
+                    <p><strong>Number of comparisons:</strong> ${result.comparisons}</p>
+                </div>`;
+            } else {
+                html += `<div class="error">
+                    <h3>❌ Search Result</h3>
+                    <p><strong>Target not found</strong></p>
+                    <p><strong>Number of comparisons:</strong> ${result.comparisons}</p>
+                </div>`;
+            }
+
+            html += `<div class="complexity-info">
+                <h3>⏱️ Time Complexity Analysis</h3>
+                <p><strong>Best Case:</strong> O(1) - Target found at first interpolated position</p>
+                <p><strong>Average Case:</strong> O(log log n) - For uniformly distributed sorted data</p>
+                <p><strong>Worst Case:</strong> O(n) - When data is not uniformly distributed</p>
+                <p><strong>Space Complexity:</strong> O(1) - Only uses constant extra space</p>
+                <p><strong>Actual comparisons made:</strong> ${result.comparisons} out of ${arraySize} elements</p>
+            </div>`;
+
+            html += `<div class="steps">
+                <h3>🔍 Search Steps</h3>`;
+            
+            result.steps.forEach(step => {
+                html += `<div class="step">${step}</div>`;
+            });
+            
+            html += `</div>`;
+
+            resultsDiv.innerHTML = html;
+            updateChart(arraySize, result.comparisons);
+
+        }
+
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = `<div class="error">
+                <h3>❌ Error</h3>
+                <p>${message}</p>
+            </div>`;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('arrayDisplay').innerHTML = '';
+            document.getElementById('arrayElements').value = '';
+            document.getElementById('searchValue').value = '';
+        }
+        let chart; // Global chart variable
+let dataPoints = []; // Store { x: size, y: comparisons }
+
+function updateChart(arraySize, comparisons) {
+    dataPoints.push({ x: arraySize, y: comparisons });
+
+    const ctx = document.getElementById('complexityChart').getContext('2d');
+    
+    if (chart) {
+        chart.data.datasets[0].data = dataPoints;
+        chart.update();
+    } else {
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Comparisons vs Array Size',
+                    data: dataPoints,
+                    fill: false,
+                    borderColor: 'rgba(102,126,234,1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Array Size'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Comparisons'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+        window.onload = function() {
+            document.getElementById('arrayElements').value = '2,4,6,8,10,12,14,16,18,20';
+            displayArray([2,4,6,8,10,12,14,16,18,20]);
+        };
+    </script>
+</body>
+</html>
